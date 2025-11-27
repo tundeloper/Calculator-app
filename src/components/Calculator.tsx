@@ -183,7 +183,7 @@ export default function Calculator() {
 
   return (
     <div
-      className={`flex min-h-screen items-center justify-center ${currentTheme.bg} rounded-lg`}
+      className={`flex min-h-screen items-center justify-center ${currentTheme.bg}`}
     >
       {/* Header */}
       <div
