@@ -3,12 +3,27 @@
 import { useState } from "react";
 import Keyboards from "./Keyboards";
 
+// Maximum number of characters to display on the calculator screen
+export const MAX_VISIBLE_CHARS = 14;
+
 export default function Calculator() {
   const [display, setDisplay] = useState("0");
+  const [expression, setExpression] = useState("0"); // Full expression including operators
   const [previousValue, setPreviousValue] = useState<string | null>(null);
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const [theme, setTheme] = useState(1);
+
+  // Get truncated expression for display (last MAX_VISIBLE_CHARS characters)
+  const getVisibleExpression = (expr: string): string => {
+    if (expr.length <= MAX_VISIBLE_CHARS) {
+      return expr;
+    }
+    return expr.slice(-MAX_VISIBLE_CHARS);
+  };
+
+  // Check if expression is truncated
+  const isExpressionTruncated = expression.length > MAX_VISIBLE_CHARS;
 
   const formatNumber = (numStr: string): string => {
     if (numStr === "Error") return numStr;
@@ -30,26 +45,31 @@ export default function Calculator() {
   const inputDigit = (digit: string) => {
     if (waitingForOperand) {
       setDisplay(digit);
+      setExpression(expression + digit);
       setWaitingForOperand(false);
     } else {
       setDisplay(display === "0" ? digit : display + digit);
+      setExpression(expression === "0" ? digit : expression + digit);
     }
   };
 
   const inputDecimal = () => {
     if (waitingForOperand) {
       setDisplay("0.");
+      setExpression(expression + "0.");
       setWaitingForOperand(false);
       return;
     }
 
     if (!display.includes(".")) {
       setDisplay(display + ".");
+      setExpression(expression + ".");
     }
   };
 
   const clear = () => {
     setDisplay("0");
+    setExpression("0");
     setPreviousValue(null);
     setOperator(null);
     setWaitingForOperand(false);
@@ -60,6 +80,12 @@ export default function Calculator() {
       setDisplay("0");
     } else {
       setDisplay(display.slice(0, -1));
+    }
+    // Also update expression - remove last character
+    if (expression.length === 1) {
+      setExpression("0");
+    } else {
+      setExpression(expression.slice(0, -1));
     }
   };
 
@@ -85,11 +111,22 @@ export default function Calculator() {
     }
   };
 
+  // Convert operator to display symbol
+  const getOperatorSymbol = (op: string): string => {
+    switch (op) {
+      case "*": return "×";
+      case "/": return "÷";
+      default: return op;
+    }
+  };
+
   const performOperation = (nextOperator: string) => {
     const inputValue = parseFloat(display);
+    const operatorSymbol = getOperatorSymbol(nextOperator);
 
     if (previousValue === null) {
       setPreviousValue(display);
+      setExpression(expression + operatorSymbol);
     } else if (operator) {
       const currentValue = parseFloat(previousValue);
       const { result, error } = executeOperation(
@@ -100,6 +137,7 @@ export default function Calculator() {
 
       if (error) {
         setDisplay("Error");
+        setExpression("Error");
         setPreviousValue(null);
         setOperator(null);
         setWaitingForOperand(true);
@@ -108,6 +146,7 @@ export default function Calculator() {
 
       setDisplay(String(result));
       setPreviousValue(String(result));
+      setExpression(expression + operatorSymbol);
     }
 
     setWaitingForOperand(true);
@@ -127,6 +166,7 @@ export default function Calculator() {
 
     if (error) {
       setDisplay("Can't divide by 0");
+      setExpression("Can't divide by 0");
       setPreviousValue(null);
       setOperator(null);
       setWaitingForOperand(true);
@@ -134,6 +174,7 @@ export default function Calculator() {
     }
 
     setDisplay(String(result));
+    setExpression(String(result)); // Reset expression to result after calculation
     setPreviousValue(null);
     setOperator(null);
     setWaitingForOperand(true);
@@ -229,9 +270,17 @@ export default function Calculator() {
 
         {/* Display */}
         <div
-          className={`${currentTheme.screenBg} ${currentTheme.textColor} text-right p-6 rounded-lg mb-6`}
+          className={`${currentTheme.screenBg} ${currentTheme.textColor} text-right p-6 rounded-lg mb-6 overflow-hidden`}
+          title={expression}
+          aria-label={`Calculator display: ${expression}`}
         >
-          <span className="text-5xl font-bold">{formatNumber(display)}</span>
+          <span 
+            className={`font-bold block ${
+              isExpressionTruncated ? "text-3xl" : "text-5xl"
+            }`}
+          >
+            {getVisibleExpression(expression)}
+          </span>
         </div>
 
         {/* Keypad */}
