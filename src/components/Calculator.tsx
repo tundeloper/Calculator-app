@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Keyboards from "./Keyboards";
+import Display from "./Display";
 
 export default function Calculator() {
   const [display, setDisplay] = useState("0");
@@ -9,42 +10,33 @@ export default function Calculator() {
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const [theme, setTheme] = useState(1);
-
-  const formatNumber = (numStr: string): string => {
-    if (numStr === "Error") return numStr;
-    const num = parseFloat(numStr);
-    if (isNaN(num)) return numStr;
-
-    const parts = numStr.split(".");
-    const integerPart = parts[0];
-    const decimalPart = parts[1];
-
-    const formattedInteger = parseInt(integerPart).toLocaleString("en-US");
-
-    if (decimalPart !== undefined) {
-      return `${formattedInteger}.${decimalPart}`;
-    }
-    return formattedInteger;
-  };
+  // Track the full expression including operators for display purposes
+  const [expression, setExpression] = useState("0");
 
   const inputDigit = (digit: string) => {
     if (waitingForOperand) {
       setDisplay(digit);
+      setExpression(expression + digit);
       setWaitingForOperand(false);
     } else {
-      setDisplay(display === "0" ? digit : display + digit);
+      const newDisplay = display === "0" ? digit : display + digit;
+      setDisplay(newDisplay);
+      // Update expression: if it's the initial "0", replace it; otherwise append
+      setExpression(expression === "0" ? digit : expression + digit);
     }
   };
 
   const inputDecimal = () => {
     if (waitingForOperand) {
       setDisplay("0.");
+      setExpression(expression + "0.");
       setWaitingForOperand(false);
       return;
     }
 
     if (!display.includes(".")) {
       setDisplay(display + ".");
+      setExpression(expression + ".");
     }
   };
 
@@ -53,13 +45,19 @@ export default function Calculator() {
     setPreviousValue(null);
     setOperator(null);
     setWaitingForOperand(false);
+    setExpression("0");
   };
 
   const deleteLastChar = () => {
     if (display.length === 1 || display === "Error") {
       setDisplay("0");
+      // When deleting and display becomes "0", keep the expression as-is minus last char
+      // unless it would become empty
+      const newExpr = expression.slice(0, -1);
+      setExpression(newExpr.length === 0 ? "0" : newExpr);
     } else {
       setDisplay(display.slice(0, -1));
+      setExpression(expression.slice(0, -1));
     }
   };
 
@@ -100,6 +98,7 @@ export default function Calculator() {
 
       if (error) {
         setDisplay("Error");
+        setExpression("Error");
         setPreviousValue(null);
         setOperator(null);
         setWaitingForOperand(true);
@@ -110,6 +109,8 @@ export default function Calculator() {
       setPreviousValue(String(result));
     }
 
+    // Add operator to expression
+    setExpression(expression + nextOperator);
     setWaitingForOperand(true);
     setOperator(nextOperator);
   };
@@ -127,13 +128,16 @@ export default function Calculator() {
 
     if (error) {
       setDisplay("Can't divide by 0");
+      setExpression("Can't divide by 0");
       setPreviousValue(null);
       setOperator(null);
       setWaitingForOperand(true);
       return;
     }
 
-    setDisplay(String(result));
+    const resultStr = String(result);
+    setDisplay(resultStr);
+    setExpression(resultStr);
     setPreviousValue(null);
     setOperator(null);
     setWaitingForOperand(true);
@@ -228,11 +232,10 @@ export default function Calculator() {
         </div>
 
         {/* Display */}
-        <div
-          className={`${currentTheme.screenBg} ${currentTheme.textColor} text-right p-6 rounded-lg mb-6`}
-        >
-          <span className="text-5xl font-bold">{formatNumber(display)}</span>
-        </div>
+        <Display 
+          expression={expression} 
+          theme={{ screenBg: currentTheme.screenBg, textColor: currentTheme.textColor }}
+        />
 
         {/* Keypad */}
         <Keyboards
