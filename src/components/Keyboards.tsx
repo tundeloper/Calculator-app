@@ -3,7 +3,7 @@ import React from 'react'
 export default function Keyboards({currentTheme, inputDigit, deleteLastChar, performOperation, inputDecimal, clear, calculate}: any) {
   return (
     <div className={`${currentTheme.keypadBg} p-6 rounded-lg`}>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-4" data-testid="calculator-keypad">
           {/* Row 1 */}
           <button
             onClick={() => inputDigit("7")}

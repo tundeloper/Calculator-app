@@ -5,7 +5,7 @@ import Calculator, { MAX_VISIBLE_CHARS } from '../Calculator';
 describe('Calculator Display Truncation', () => {
   // Helper function to click a keypad button
   const clickKeypadButton = (container: HTMLElement, value: string) => {
-    const keypad = container.querySelector('.grid.grid-cols-4') as HTMLElement;
+    const keypad = container.querySelector('[data-testid="calculator-keypad"]') as HTMLElement;
     const button = within(keypad).getByText(value);
     fireEvent.click(button);
   };
