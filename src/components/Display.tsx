@@ -28,7 +28,7 @@ export function truncateExpression(expression: string, maxChars: number = MAX_VI
 export function formatNumber(numStr: string): string {
   if (numStr === "Error" || numStr === "Can't divide by 0") return numStr;
   
-  // Check if it's an expression (contains operators)
+  // Check if it's an expression (contains operators) - check early for better performance
   if (/[+\-*/×÷]/.test(numStr)) {
     return numStr; // Return expressions as-is without formatting
   }
@@ -40,7 +40,8 @@ export function formatNumber(numStr: string): string {
   const integerPart = parts[0];
   const decimalPart = parts[1];
 
-  const formattedInteger = parseInt(integerPart).toLocaleString("en-US");
+  // Use Number() instead of parseInt() to avoid precision loss for large numbers
+  const formattedInteger = Number(integerPart).toLocaleString("en-US");
 
   if (decimalPart !== undefined) {
     return `${formattedInteger}.${decimalPart}`;
